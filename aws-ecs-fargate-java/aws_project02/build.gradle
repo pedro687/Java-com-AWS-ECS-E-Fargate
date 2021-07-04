@@ -1,0 +1,73 @@
+buildscript {
+	ext {
+		springBootVersion = '2.4.2'
+	}
+	repositories {
+		mavenCentral()
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+	}
+
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+		classpath("gradle.plugin.com.palantir.gradle.docker:gradle-docker:0.22.2")
+	}
+}
+
+plugins {
+	id 'org.springframework.boot' version '2.4.3'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+	id 'com.palantir.docker' version '0.22.2'
+}
+
+group = 'pedrospiet'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '15'
+
+bootJar {
+	baseName = 'curso_aws-ecs-fargate-java_aws_project02'
+	version = '1.5.0'
+	mainClassName = "com.pedrospiet.aws_project02.AwsProject02Application"
+}
+
+task unpack(type: Copy) {
+	dependsOn bootJar
+	from(zipTree(tasks.bootJar.outputs.files.singleFile))
+	into("build/dependency")
+}
+
+docker {
+	name "${project.group}/${bootJar.baseName}"
+	tags "${bootJar.version}"
+	copySpec.from(tasks.unpack.outputs).into("dependency")
+	buildArgs(['DEPENDENCY': "dependency"])
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	
+	// https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-sqs
+	implementation group: 'com.amazonaws', name: 'aws-java-sdk-sqs', version: '1.11.959'
+	// https://mvnrepository.com/artifact/org.springframework/spring-jms
+	implementation group: 'org.springframework', name: 'spring-jms', version: '5.3.4'
+	// https://mvnrepository.com/artifact/com.amazonaws/amazon-sqs-java-messaging-lib
+	implementation group: 'com.amazonaws', name: 'amazon-sqs-java-messaging-lib', version: '1.0.8'
+	
+	// https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-dynamodb
+	implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.11.959'
+	// https://mvnrepository.com/artifact/io.github.boostchicken/spring-data-dynamodb
+	implementation group: 'io.github.boostchicken', name: 'spring-data-dynamodb', version: '5.2.5'	
+	
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+	useJUnitPlatform()
+}
